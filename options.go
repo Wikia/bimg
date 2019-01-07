@@ -27,6 +27,14 @@ const (
 	GravitySouth
 	// GravityWest represents the west value used for image gravity orientation.
 	GravityWest
+	// GravityNorthWest represents the north-west value used for image gravity orientation.
+	GravityNorthWest
+	// GravityNorthEast represents the north-east value used for image gravity orientation.
+	GravityNorthEast
+	// GravitySouthWest represents the south-west value used for image gravity orientation.
+	GravitySouthWest
+	// GravitySouthEast represents the south-east value used for image gravity orientation.
+	GravitySouthEast
 	// GravitySmart enables libvips Smart Crop algorithm for image gravity orientation.
 	GravitySmart
 )
