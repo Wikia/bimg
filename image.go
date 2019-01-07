@@ -1,5 +1,8 @@
 package bimg
 
+import "runtime"
+import "C"
+
 // Image provides a simple method DSL to transform a given image as byte buffer.
 type Image struct {
 	buffer []byte
@@ -66,6 +69,29 @@ func (i *Image) Extract(top, left, width, height int) ([]byte, error) {
 	}
 
 	return i.Process(options)
+}
+
+// Embed image in area of size width by height at position x , y .
+func (i *Image) Embed(o Options) ([]byte, error) {
+	defer runtime.KeepAlive(i.buffer)
+
+	image, err := embedder(i.buffer, o)
+	if err != nil {
+		return nil, err
+	}
+	i.buffer = image
+	return image, nil
+}
+
+func (i *Image) WindowCropFixed(o Options) ([]byte, error) {
+	defer runtime.KeepAlive(i.buffer)
+
+	image, err := windowcropfixed(i.buffer, o)
+	if err != nil {
+		return nil, err
+	}
+	i.buffer = image
+	return image, nil
 }
 
 // Enlarge enlarges the image by width and height. Aspect ratio is maintained.

@@ -265,6 +265,18 @@ func vipsZoom(image *C.VipsImage, zoom int) (*C.VipsImage, error) {
 	return out, nil
 }
 
+func vipsResize(image *C.VipsImage, scale float64) (*C.VipsImage, error) {
+	var out *C.VipsImage
+	defer C.g_object_unref(C.gpointer(image))
+
+	err := C.vips_resize_bridge(image, &out, C.double(scale))
+	if err != 0 {
+		return nil, catchVipsError()
+	}
+
+	return out, nil
+}
+
 func vipsWatermark(image *C.VipsImage, w Watermark) (*C.VipsImage, error) {
 	var out *C.VipsImage
 
