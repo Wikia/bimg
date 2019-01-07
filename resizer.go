@@ -61,8 +61,10 @@ func resizer(buf []byte, o Options) ([]byte, error) {
 			factor = 1.0
 			shrink = 1
 			residual = 0
-			o.Width = inWidth
-			o.Height = inHeight
+			//if !o.Embed {
+				o.Width = inWidth
+				o.Height = inHeight
+			//}
 		}
 	}
 
@@ -262,7 +264,7 @@ func extractOrEmbedImage(image *C.VipsImage, o Options) (*C.VipsImage, error) {
 		image, err = vipsExtract(image, left, top, width, height)
 		break
 	case o.Embed:
-		left, top := (o.Width-inWidth)/2, (o.Height-inHeight)/2
+		left, top := calculateEmbed(inWidth, inHeight, o.Width, o.Height, o.Gravity)
 		image, err = vipsEmbed(image, left, top, o.Width, o.Height, o.Extend, o.Background)
 		break
 	case o.Trim:
@@ -495,9 +497,47 @@ func calculateCrop(inWidth, inHeight, outWidth, outHeight int, gravity Gravity) 
 		top = inHeight - outHeight
 	case GravityWest:
 		top = (inHeight - outHeight + 1) / 2
+	case GravityNorthWest:	// noop case
+	case GravityNorthEast:
+		left = inWidth - outWidth
+	case GravitySouthEast:
+		top = inHeight - outHeight
+		left = inWidth - outWidth
+	case GravitySouthWest:
+		top = inHeight - outHeight
 	default:
 		left = (inWidth - outWidth + 1) / 2
 		top = (inHeight - outHeight + 1) / 2
+	}
+
+	return left, top
+}
+
+func calculateEmbed(inWidth, inHeight, outWidth, outHeight int, gravity Gravity) (int, int) {
+	left, top := 0, 0
+
+	switch gravity {
+	case GravityNorth:
+		left = (outWidth-inWidth)/2
+	case GravityEast:
+		left = outWidth-inWidth
+		top = (outHeight-inHeight)/2
+	case GravitySouth:
+		left = (outWidth-inWidth)/2
+		top = outHeight - inHeight
+	case GravityWest:
+		top = (outHeight-inHeight)/2
+	case GravityNorthWest:	// noop case
+	case GravityNorthEast:
+		left = outWidth - inWidth
+	case GravitySouthEast:
+		top = outHeight - inHeight
+		left = outWidth - inWidth
+	case GravitySouthWest:
+		top = outHeight - inHeight
+	default:
+		left = (outWidth-inWidth)/2
+		top = (outHeight-inHeight)/2
 	}
 
 	return left, top
