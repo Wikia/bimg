@@ -258,7 +258,6 @@ vips_resize_bridge(VipsImage *in, VipsImage **out, double scale) {
 	return vips_resize(in, out, scale, NULL);
 }
 
-
 int
 vips_colourspace_issupported_bridge(VipsImage *in) {
 	return vips_colourspace_issupported(in) ? 1 : 0;
