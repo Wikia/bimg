@@ -78,7 +78,7 @@ func TestResizeVerticalImage(t *testing.T) {
 		{Width: 1000, Height: 1500},
 		{Width: 1000},
 		{Height: 1500},
-		//{Width: 100, Height: 50},
+		{Width: 100, Height: 50},
 		{Width: 2000, Height: 2000},
 		{Width: 500, Height: 1000},
 		{Width: 500},
