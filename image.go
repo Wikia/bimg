@@ -1,7 +1,5 @@
 package bimg
 
-import "runtime"
-
 // Image provides a simple method DSL to transform a given image as byte buffer.
 type Image struct {
 	buffer []byte
@@ -71,9 +69,7 @@ func (i *Image) Extract(top, left, width, height int) ([]byte, error) {
 }
 
 func (i *Image) WindowCropFixed(o Options) ([]byte, error) {
-	defer runtime.KeepAlive(i.buffer)
-
-	image, err := windowcropfixed(i.buffer, o)
+	image, err := WindowCropFixed(i.buffer, o)
 	if err != nil {
 		return nil, err
 	}

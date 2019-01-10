@@ -569,8 +569,6 @@ func getAngle(angle Angle) Angle {
 }
 
 func windowcropfixed(buf []byte, o Options) ([]byte, error) {
-	// simulate the window-crop-fixed operation of Vignette
-	// (https://github.com/Wikia/vignette/#window-crop-fixed)
 	defer C.vips_thread_shutdown()
 
 	image, _, err := loadImage(buf)

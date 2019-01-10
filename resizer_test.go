@@ -45,7 +45,7 @@ func TestWindowCropFixed( t *testing.T) {
 	}
 	for i, options := range tests {
 		options.Quality = 80
-		image, err := windowcropfixed(buf, options)
+		image, err := WindowCropFixed(buf, options)
 		if err != nil {
 			t.Errorf("Resize(imgData, %#v) error: %#v", options, err)
 		}
