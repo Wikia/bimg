@@ -33,6 +33,44 @@ func TestResize(t *testing.T) {
 	Write("testdata/test_out.jpg", newImg)
 }
 
+func TestWindowCropFixed( t *testing.T) {
+	buf, _ := Read("testdata/test.jpg")	// 1680 x 1050
+	sourceType := JPEG
+	tests := []Options{
+		{Width: 768, Height: 480, Left: 0, Top: 0, AreaWidth: 1680, AreaHeight: 1050},	// just scale down the image
+		{Width: 768, Height: 480, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},	// crop and scale down the image
+		{Width: 768, Height: 800, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},	// vertical padding
+		{Width: 1024, Height: 480, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},	// horizontal padding
+		{Width: 768, Height: 768, Left: 1000, Top: 800, AreaWidth: 840, AreaHeight: 525},	// crop outside of the image
+	}
+	for i, options := range tests {
+		options.Quality = 80
+		image, err := windowcropfixed(buf, options)
+		if err != nil {
+			t.Errorf("Resize(imgData, %#v) error: %#v", options, err)
+		}
+		format := DetermineImageType(image)
+		if format != sourceType {
+			t.Fatalf("Image format is invalid. Expected: %#v got %v", ImageTypeName(sourceType), ImageTypeName(format))
+		}
+
+		size, _ := Size(image)
+		if options.Height > 0 && size.Height != options.Height {
+			t.Fatalf("Invalid height: %d (%v)", size.Height, options)
+		}
+		if options.Width > 0 && size.Width != options.Width {
+			t.Fatalf("Invalid width: %d (%v)", size.Width, options)
+		}
+
+		Write(
+			fmt.Sprintf(
+				"testdata/test_windowcropfixed_%d.%s",
+				i,
+				ImageTypeName(sourceType)),
+			image)
+	}
+}
+
 func TestResizeVerticalImage(t *testing.T) {
 	tests := []Options{
 		{Width: 800, Height: 600},
@@ -40,7 +78,7 @@ func TestResizeVerticalImage(t *testing.T) {
 		{Width: 1000, Height: 1500},
 		{Width: 1000},
 		{Height: 1500},
-		{Width: 100, Height: 50},
+		//{Width: 100, Height: 50},
 		{Width: 2000, Height: 2000},
 		{Width: 500, Height: 1000},
 		{Width: 500},
