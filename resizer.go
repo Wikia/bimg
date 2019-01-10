@@ -61,10 +61,8 @@ func resizer(buf []byte, o Options) ([]byte, error) {
 			factor = 1.0
 			shrink = 1
 			residual = 0
-			//if !o.Embed {
-				o.Width = inWidth
-				o.Height = inHeight
-			//}
+			o.Width = inWidth
+			o.Height = inHeight
 		}
 	}
 
@@ -264,7 +262,7 @@ func extractOrEmbedImage(image *C.VipsImage, o Options) (*C.VipsImage, error) {
 		image, err = vipsExtract(image, left, top, width, height)
 		break
 	case o.Embed:
-		left, top := calculateEmbed(inWidth, inHeight, o.Width, o.Height, o.Gravity)
+		left, top := (o.Width-inWidth)/2, (o.Height-inHeight)/2
 		image, err = vipsEmbed(image, left, top, o.Width, o.Height, o.Extend, o.Background)
 		break
 	case o.Trim:
@@ -497,47 +495,9 @@ func calculateCrop(inWidth, inHeight, outWidth, outHeight int, gravity Gravity) 
 		top = inHeight - outHeight
 	case GravityWest:
 		top = (inHeight - outHeight + 1) / 2
-	case GravityNorthWest:	// noop case
-	case GravityNorthEast:
-		left = inWidth - outWidth
-	case GravitySouthEast:
-		top = inHeight - outHeight
-		left = inWidth - outWidth
-	case GravitySouthWest:
-		top = inHeight - outHeight
 	default:
 		left = (inWidth - outWidth + 1) / 2
 		top = (inHeight - outHeight + 1) / 2
-	}
-
-	return left, top
-}
-
-func calculateEmbed(inWidth, inHeight, outWidth, outHeight int, gravity Gravity) (int, int) {
-	left, top := 0, 0
-
-	switch gravity {
-	case GravityNorth:
-		left = (outWidth-inWidth)/2
-	case GravityEast:
-		left = outWidth-inWidth
-		top = (outHeight-inHeight)/2
-	case GravitySouth:
-		left = (outWidth-inWidth)/2
-		top = outHeight - inHeight
-	case GravityWest:
-		top = (outHeight-inHeight)/2
-	case GravityNorthWest:	// noop case
-	case GravityNorthEast:
-		left = outWidth - inWidth
-	case GravitySouthEast:
-		top = outHeight - inHeight
-		left = outWidth - inWidth
-	case GravitySouthWest:
-		top = outHeight - inHeight
-	default:
-		left = (outWidth-inWidth)/2
-		top = (outHeight-inHeight)/2
 	}
 
 	return left, top
@@ -608,22 +568,6 @@ func getAngle(angle Angle) Angle {
 	return Angle(math.Min(float64(angle), 270))
 }
 
-func embedder(buf []byte, o Options) ([]byte, error) {
-	defer C.vips_thread_shutdown()
-
-	image, _, err := loadImage(buf)
-	if err != nil {
-		return nil, err
-	}
-
-	image, err = vipsEmbed(image, o.Left, o.Top, o.Width, o.Height, o.Extend, o.Background)
-	if err != nil {
-		return nil, err
-	}
-
-	return saveImage(image, o)
-}
-
 func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 	defer C.vips_thread_shutdown()
 
@@ -631,7 +575,7 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// ---------------------
+
 	// check if we need to crop the image
 	if o.Left != 0 || o.Top != 0 || int(image.Xsize) != o.AreaWidth || int(image.Ysize) != o.AreaHeight {
 		left, top, width, height := o.Left, o.Top, o.AreaWidth, o.AreaHeight
@@ -675,29 +619,24 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 	// now we have the cropped image of o.AreaWidth, o.AreaHeight size; resize it to match the target size
 	inWidth := int(image.Xsize)
 	inHeight := int(image.Ysize)
-	fmt.Printf("Cropped the image, the size is (%v, %v), output size should be (%v, %v)\n",
-		inWidth, inHeight, o.Width, o.Height)
 	if inWidth != o.Width || inHeight != o.Height {
 		// check if we need to scale the image
 		if !((inWidth == o.Width && inHeight < o.Height) ||
 			(inHeight == o.Height && inWidth < o.Width)) {
 				fmt.Println("Need to scale the image")
 				scaleX, scaleY := float64(o.Width) / float64(inWidth), float64(o.Height) / float64(inHeight)
-  			fmt.Printf("Scaling image (%v, %v) by scale %v\n", inWidth, inHeight, math.Min(scaleX, scaleY))
 			  image, err = vipsResize(image, math.Min(scaleX, scaleY))
 				if err != nil {
 					return nil, err
 				}
 				inWidth = int(image.Xsize)
 				inHeight = int(image.Ysize)
-				fmt.Printf("Scaled the image, the size is (%v, %v)\n", inWidth, inHeight)
 		}
 
 		// in case the output image does not match the target area (different aspect ration), embed the image
 		if inWidth != o.Width || inHeight != o.Height {
 			left := (o.Width - inWidth) / 2
 			top := (o.Height - inHeight) / 2
-			fmt.Printf("Embedding the image at (%v, %v)\n", left, top)
 			image, err = vipsEmbed(image, left, top, o.Width, o.Height, o.Extend, o.Background)
 			if err != nil {
 				return nil, err
@@ -705,8 +644,5 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 		}
 
 	}
-
-	fmt.Printf("Image size is (%v, %v)\n", int(image.Xsize), int(image.Ysize))
-	// ---------------------
 	return saveImage(image, o)
 }
