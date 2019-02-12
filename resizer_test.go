@@ -33,15 +33,15 @@ func TestResize(t *testing.T) {
 	Write("testdata/test_out.jpg", newImg)
 }
 
-func TestWindowCropFixed( t *testing.T) {
-	buf, _ := Read("testdata/test.jpg")	// 1680 x 1050
+func TestWindowCropFixed(t *testing.T) {
+	buf, _ := Read("testdata/test.jpg") // 1680 x 1050
 	sourceType := JPEG
 	tests := []Options{
-		{Width: 768, Height: 480, Left: 0, Top: 0, AreaWidth: 1680, AreaHeight: 1050},	// just scale down the image
-		{Width: 768, Height: 480, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},	// crop and scale down the image
-		{Width: 768, Height: 800, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},	// vertical padding
-		{Width: 1024, Height: 480, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},	// horizontal padding
-		{Width: 768, Height: 768, Left: 1000, Top: 800, AreaWidth: 840, AreaHeight: 525},	// crop outside of the image
+		{Width: 768, Height: 480, Left: 0, Top: 0, AreaWidth: 1680, AreaHeight: 1050},    // just scale down the image
+		{Width: 768, Height: 480, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},  // crop and scale down the image
+		{Width: 768, Height: 800, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525},  // vertical padding
+		{Width: 1024, Height: 480, Left: 384, Top: 240, AreaWidth: 840, AreaHeight: 525}, // horizontal padding
+		{Width: 768, Height: 768, Left: 1000, Top: 800, AreaWidth: 840, AreaHeight: 525}, // crop outside of the image
 	}
 	for i, options := range tests {
 		options.Quality = 80

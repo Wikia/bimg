@@ -575,10 +575,12 @@ func getAngle(angle Angle) Angle {
 func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 	defer C.vips_thread_shutdown()
 
-	image, _, err := loadImage(buf)
+	image, imageType, err := loadImage(buf)
 	if err != nil {
 		return nil, err
 	}
+
+	o = applyDefaults(o, imageType)
 
 	// check if we need to crop the image
 	if o.Left != 0 || o.Top != 0 || int(image.Xsize) != o.AreaWidth || int(image.Ysize) != o.AreaHeight {
@@ -592,10 +594,10 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 			top = 0
 			height += o.Top
 		}
-		if left + width > int(image.Xsize) {
+		if left+width > int(image.Xsize) {
 			width = int(image.Xsize) - left
 		}
-		if top + height > int(image.Ysize) {
+		if top+height > int(image.Ysize) {
 			height = int(image.Ysize) - top
 		}
 		if width > 0 && height > 0 { // sanity check
@@ -606,7 +608,7 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 		}
 		// in case the window area was exceeding the image boundaries, embed the image in the window area
 		if int(image.Xsize) < o.AreaWidth || int(image.Ysize) < o.AreaHeight {
-			left, top := 0, 0		// where to put the cropped image
+			left, top := 0, 0 // where to put the cropped image
 			if o.Left < 0 {
 				left = -o.Left
 			}
@@ -627,13 +629,13 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 		// check if we need to scale the image
 		if !((inWidth == o.Width && inHeight < o.Height) ||
 			(inHeight == o.Height && inWidth < o.Width)) {
-				scaleX, scaleY := float64(o.Width) / float64(inWidth), float64(o.Height) / float64(inHeight)
-			  image, err = vipsResize(image, math.Min(scaleX, scaleY))
-				if err != nil {
-					return nil, err
-				}
-				inWidth = int(image.Xsize)
-				inHeight = int(image.Ysize)
+			scaleX, scaleY := float64(o.Width)/float64(inWidth), float64(o.Height)/float64(inHeight)
+			image, err = vipsResize(image, math.Min(scaleX, scaleY))
+			if err != nil {
+				return nil, err
+			}
+			inWidth = int(image.Xsize)
+			inHeight = int(image.Ysize)
 		}
 
 		// in case the output image does not match the target area (different aspect ration), embed the image
@@ -647,5 +649,11 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 		}
 
 	}
+
+	image, err = imageFlatten(image, imageType, o)
+	if err != nil {
+		return nil, err
+	}
+
 	return saveImage(image, o)
 }

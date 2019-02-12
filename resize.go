@@ -23,4 +23,3 @@ func WindowCropFixed(buf []byte, o Options) ([]byte, error) {
 	defer runtime.KeepAlive(buf)
 	return windowcropfixed(buf, o)
 }
-
