@@ -652,6 +652,8 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 		}
 	}
 
+	inWidth = int(image.Xsize)
+	inHeight = int(image.Ysize)
 	// now we have the cropped image of o.AreaWidth, o.AreaHeight size; resize it to match the target size
 	if inWidth != o.Width || inHeight != o.Height {
 		// check if we need to scale the image
