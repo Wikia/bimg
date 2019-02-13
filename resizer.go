@@ -582,6 +582,36 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 
 	o = applyDefaults(o, imageType)
 
+	inWidth := int(image.Xsize)
+	inHeight := int(image.Ysize)
+
+	// image calculations
+	factor := imageCalculations(&o, inWidth, inHeight)
+	shrink := calculateShrink(factor, o.Interpolator)
+
+	// Do not enlarge the output if the input width or height
+	// are already less than the required dimensions
+	if !o.Enlarge && !o.Force {
+		if inWidth < o.Width && inHeight < o.Height {
+			factor = 1.0
+			shrink = 1
+			o.Width = inWidth
+			o.Height = inHeight
+		}
+	}
+
+	// Try to use libjpeg/libwebp shrink-on-load
+	supportsShrinkOnLoad := imageType == WEBP && VipsMajorVersion >= 8 && VipsMinorVersion >= 3
+	supportsShrinkOnLoad = supportsShrinkOnLoad || imageType == JPEG
+	if supportsShrinkOnLoad && shrink >= 2 {
+		tmpImage, _, err := shrinkOnLoad(buf, image, imageType, factor, shrink)
+		if err != nil {
+			return nil, err
+		}
+
+		image = tmpImage
+	}
+
 	// check if we need to crop the image
 	if o.Left != 0 || o.Top != 0 || int(image.Xsize) != o.AreaWidth || int(image.Ysize) != o.AreaHeight {
 		left, top, width, height := o.Left, o.Top, o.AreaWidth, o.AreaHeight
@@ -623,8 +653,6 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 	}
 
 	// now we have the cropped image of o.AreaWidth, o.AreaHeight size; resize it to match the target size
-	inWidth := int(image.Xsize)
-	inHeight := int(image.Ysize)
 	if inWidth != o.Width || inHeight != o.Height {
 		// check if we need to scale the image
 		if !((inWidth == o.Width && inHeight < o.Height) ||
