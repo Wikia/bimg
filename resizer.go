@@ -610,6 +610,8 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 		}
 
 		image = tmpImage
+		inWidth = int(image.Xsize)
+		inHeight = int(image.Ysize)
 	}
 
 	// check if we need to crop the image
