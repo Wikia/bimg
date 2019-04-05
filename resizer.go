@@ -640,8 +640,8 @@ func windowcropfixed(buf []byte, o Options) ([]byte, error) {
 
 		// in case the output image does not match the target area (different aspect ration), embed the image
 		if inWidth != o.Width || inHeight != o.Height {
-			left := (o.Width - inWidth) / 2
-			top := (o.Height - inHeight) / 2
+			left := int(math.Round(float64(o.Width-inWidth) / 2.0))
+			top := int(math.Round(float64(o.Height-inHeight) / 2.0))
 			image, err = vipsEmbed(image, left, top, o.Width, o.Height, o.Extend, o.Background)
 			if err != nil {
 				return nil, err
