@@ -68,6 +68,15 @@ func (i *Image) Extract(top, left, width, height int) ([]byte, error) {
 	return i.Process(options)
 }
 
+func (i *Image) WindowCropFixed(o Options) ([]byte, error) {
+	image, err := WindowCropFixed(i.buffer, o)
+	if err != nil {
+		return nil, err
+	}
+	i.buffer = image
+	return image, nil
+}
+
 // Enlarge enlarges the image by width and height. Aspect ratio is maintained.
 func (i *Image) Enlarge(width, height int) ([]byte, error) {
 	options := Options{

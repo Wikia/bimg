@@ -571,3 +571,89 @@ func getAngle(angle Angle) Angle {
 	}
 	return Angle(math.Min(float64(angle), 270))
 }
+
+func windowcropfixed(buf []byte, o Options) ([]byte, error) {
+	defer C.vips_thread_shutdown()
+
+	image, imageType, err := loadImage(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	o = applyDefaults(o, imageType)
+
+	// check if we need to crop the image
+	if o.Left != 0 || o.Top != 0 || int(image.Xsize) != o.AreaWidth || int(image.Ysize) != o.AreaHeight {
+		left, top, width, height := o.Left, o.Top, o.AreaWidth, o.AreaHeight
+		// first make sure the cropping area fits the image area
+		if o.Left < 0 {
+			left = 0
+			width += o.Left
+		}
+		if o.Top < 0 {
+			top = 0
+			height += o.Top
+		}
+		if left+width > int(image.Xsize) {
+			width = int(image.Xsize) - left
+		}
+		if top+height > int(image.Ysize) {
+			height = int(image.Ysize) - top
+		}
+		if width > 0 && height > 0 { // sanity check
+			image, err = vipsExtract(image, left, top, width, height)
+			if err != nil {
+				return nil, err
+			}
+		}
+		// in case the window area was exceeding the image boundaries, embed the image in the window area
+		if int(image.Xsize) < o.AreaWidth || int(image.Ysize) < o.AreaHeight {
+			left, top := 0, 0 // where to put the cropped image
+			if o.Left < 0 {
+				left = -o.Left
+			}
+			if o.Top < 0 {
+				top = -o.Top
+			}
+			image, err = vipsEmbed(image, left, top, o.AreaWidth, o.AreaHeight, o.Extend, o.Background)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// now we have the cropped image of o.AreaWidth, o.AreaHeight size; resize it to match the target size
+	inWidth := int(image.Xsize)
+	inHeight := int(image.Ysize)
+	if inWidth != o.Width || inHeight != o.Height {
+		// check if we need to scale the image
+		if !((inWidth == o.Width && inHeight < o.Height) ||
+			(inHeight == o.Height && inWidth < o.Width)) {
+			scaleX, scaleY := float64(o.Width)/float64(inWidth), float64(o.Height)/float64(inHeight)
+			image, err = vipsResize(image, math.Min(scaleX, scaleY))
+			if err != nil {
+				return nil, err
+			}
+			inWidth = int(image.Xsize)
+			inHeight = int(image.Ysize)
+		}
+
+		// in case the output image does not match the target area (different aspect ration), embed the image
+		if inWidth != o.Width || inHeight != o.Height {
+			left := int(math.Round(float64(o.Width-inWidth) / 2.0))
+			top := int(math.Round(float64(o.Height-inHeight) / 2.0))
+			image, err = vipsEmbed(image, left, top, o.Width, o.Height, o.Extend, o.Background)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+	}
+
+	image, err = imageFlatten(image, imageType, o)
+	if err != nil {
+		return nil, err
+	}
+
+	return saveImage(image, o)
+}
